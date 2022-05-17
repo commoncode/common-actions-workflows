@@ -1,0 +1,80 @@
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        description: "Location of pyproject.toml"
+        default: ${{ github.workspace }}
+        required: true
+        type: string
+      python_version:
+        description: "Version of python used by project"
+        default: '3.9'
+        required: false
+        type: number
+      fail:
+        description: "Licences which cause test failure"
+        default: "Copyleft"
+        required: false
+        type: string
+    outputs:
+      report:
+        description: "Result of the license checker"
+        value: ${{ jobs.license-python.outputs.report }}
+
+
+jobs:
+  license-python:
+    name: Licence scan for Python dependencies
+    runs-on: ubuntu-18.04
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    outputs:
+      report: ${{ steps.final.outputs.report }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: false
+          virtualenvs-path: ~/.virtualenvs
+          installer-parallel: true
+
+      - name: Load cached prod venv
+        id: cached-poetry-prod-dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.virtualenvs
+          key: venv-${{ runner.os }}-prod-licenses-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install prod Dependencies
+        run: poetry install --no-root --no-dev
+        if: steps.cached-poetry-prod-dependencies.outputs.cache-hit != 'true'
+
+      - name: Prepare requirements file
+        run: |
+          poetry export -o ${{ github.workspace }}/requirements-out.txt  --without-hashes
+          cat ${{ github.workspace }}/requirements-out.txt
+
+      - name: Check Python dependencies license names and type
+        id: license_check_report
+        uses: pilosus/action-pip-license-checker@v0.6.1
+        with:
+          requirements: 'requirements-out.txt'
+          fail: ${{ inputs.fail }}
+          with-totals: true
+          table-headers: true
+
+      - name: Print report
+        id: final
+        if: ${{ always() }}
+        run: |
+          export report=${{ steps.license_check_report.outputs.report }}
+          echo report
+          echo "::set-output name=report::${{ report }}"
