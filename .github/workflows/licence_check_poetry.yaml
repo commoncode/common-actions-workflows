@@ -15,6 +15,14 @@ on:
         default: "Copyleft"
         required: false
         type: string
+        # These choices are based on: https://github.com/pilosus/pip-license-checker#license-types
+        # 'NetworkCopyleft' # (GNU Affero GPL and the like)
+        # 'StrongCopyleft' # (GNU GPL and the like)
+        # 'WeakCopyleft' # (file-based or module-based copyleft like MPL or EPL)
+        # 'Copyleft' # (includes all of above)
+        # 'Permissive' # (BSD-style licenses)
+        # 'Other' # (EULA, licenses not detected by the tool)
+        # 'Error' # (no license name found or provided)
     outputs:
       report:
         description: "Result of the license checker"
