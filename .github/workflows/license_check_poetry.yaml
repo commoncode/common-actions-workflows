@@ -79,9 +79,13 @@ jobs:
           table-headers: true
 
       - name: Print report
-        id: final
+        id: print-report
         if: ${{ always() }}
-        run: |
-          export report=${{ steps.license_check_report.outputs.report }}
-          echo report
-          echo "::set-output name=report::$report"
+        run: echo ${{ steps.license_check_report.outputs.report }}
+
+      - uses: actions/github-script@v5
+        if: ${{ always() }}
+        id: final
+        with:
+          script: |
+            core.setOutput("report", `${{ steps.license_check_report.outputs.report }}`);
