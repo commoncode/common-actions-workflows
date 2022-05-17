@@ -81,7 +81,7 @@ jobs:
       - name: Print report
         id: print-report
         if: ${{ always() }}
-        run: echo ${{ steps.license_check_report.outputs.report }}
+        run: echo "${{ steps.license_check_report.outputs.report }}"
 
       - uses: actions/github-script@v5
         if: ${{ always() }}
