@@ -27,6 +27,7 @@ on:
       report:
         description: "Result of the license checker"
         value: ${{ jobs.license-python.outputs.report }}
+  workflow_dispatch:
 
 jobs:
   license-python:
