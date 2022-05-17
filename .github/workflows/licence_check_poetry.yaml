@@ -3,8 +3,7 @@ on:
     inputs:
       working_directory:
         description: "Location of pyproject.toml"
-        default: ${{ github.workspace }}
-        required: true
+        required: false
         type: string
       python_version:
         description: "Version of python used by project"
@@ -21,14 +20,13 @@ on:
         description: "Result of the license checker"
         value: ${{ jobs.license-python.outputs.report }}
 
-
 jobs:
   license-python:
     name: Licence scan for Python dependencies
     runs-on: ubuntu-18.04
     defaults:
       run:
-        working-directory: ${{ inputs.working_directory }}
+        working-directory: ${{ inputs.working_directory || github.workspace }}
     outputs:
       report: ${{ steps.final.outputs.report }}
     steps:
