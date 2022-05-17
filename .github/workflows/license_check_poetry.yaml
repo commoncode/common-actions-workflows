@@ -7,9 +7,9 @@ on:
         type: string
       python_version:
         description: "Version of python used by project"
-        default: '3.9'
+        default: '3.x'
         required: false
-        type: number
+        type: string
       fail:
         description: "Licences which cause test failure"
         default: "Copyleft"
@@ -40,8 +40,8 @@ jobs:
       report: ${{ steps.final.outputs.report }}
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v1
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ inputs.python_version }}
 
