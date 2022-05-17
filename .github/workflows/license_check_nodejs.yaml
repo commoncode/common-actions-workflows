@@ -1,0 +1,71 @@
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        description: "Location of package.json"
+        required: false
+        type: string
+      node_version:
+        description: "Version of Node used by project"
+        default: '16'
+        required: false
+        type: string
+      fail:
+        description: "Licences which cause test failure"
+        default: "Copyleft"
+        required: false
+        type: string
+        # These choices are based on: https://github.com/pilosus/pip-license-checker#license-types
+        # 'NetworkCopyleft' # (GNU Affero GPL and the like)
+        # 'StrongCopyleft' # (GNU GPL and the like)
+        # 'WeakCopyleft' # (file-based or module-based copyleft like MPL or EPL)
+        # 'Copyleft' # (includes all of above)
+        # 'Permissive' # (BSD-style licenses)
+        # 'Other' # (EULA, licenses not detected by the tool)
+        # 'Error' # (no license name found or provided)
+    outputs:
+      report:
+        description: "Result of the license checker"
+        value: ${{ jobs.license-nodejs.outputs.report }}
+
+jobs:
+  license-nodejs:
+    name: Licence compliance scanning NodeJS deps
+    runs-on: ubuntu-latest
+    needs: pre-nodejs
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory || github.workspace }}
+    outputs:
+      report: ${{ steps.final.outputs.report }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ inputs.node_version }}
+
+      - name: Export license-checker CSV
+        run: npx license-checker --production --csv > ${{ github.workspace}}/licenses.csv
+
+      - name: Check license-checker CSV file without headers
+        id: js_license_check_report
+        uses: pilosus/action-pip-license-checker@v0.6.1
+        with:
+          external: 'licenses.csv'
+          external-format: 'csv'
+          external-options: '{:skip-header true}'
+          fail: 'Copyleft'
+          with-totals: true
+          table-headers: true
+
+      - name: Print report
+        id: print-report
+        if: ${{ always() }}
+        run: echo "${{ steps.js_license_check_report.outputs.report }}"
+
+      - uses: actions/github-script@v5
+        if: ${{ always() }}
+        id: final
+        with:
+          script: |
+            core.setOutput("report", `${{ steps.js_license_check_report.outputs.report }}`);
